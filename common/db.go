@@ -144,6 +144,7 @@ func WaitDBUp() {
 	defer func() {
 		sdb.Close()
 	}()
+	// 给数据库发请求 判断是否挂了
 	for _, err := dtmimp.DBExec(sdb, "select 1"); err != nil; { // wait for mysql to start
 		time.Sleep(3 * time.Second)
 		_, err = dtmimp.DBExec(sdb, "select 1")

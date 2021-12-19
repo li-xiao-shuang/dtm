@@ -30,22 +30,26 @@ func StartSvr() {
 	dtmimp.Logf("start dtmsvr")
 	app := common.GetGinApp()
 	app = httpMetrics(app)
+	// 注册api
 	addRoute(app)
 	dtmimp.Logf("dtmsvr listen at: %d", common.DtmHttpPort)
 	go app.Run(fmt.Sprintf(":%d", common.DtmHttpPort))
 
+	// 启动tcp 服务
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", common.DtmGrpcPort))
 	dtmimp.FatalIfError(err)
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc.UnaryServerInterceptor(grpcMetrics), grpc.UnaryServerInterceptor(dtmgimp.GrpcServerLog)),
 		))
+	// 注册 grpc 服务
 	dtmgimp.RegisterDtmServer(s, &dtmServer{})
 	dtmimp.Logf("grpc listening at %v", lis.Addr())
 	go func() {
 		err := s.Serve(lis)
 		dtmimp.FatalIfError(err)
 	}()
+	// 异步更新分支
 	go updateBranchAsync()
 
 	// prometheus exporter

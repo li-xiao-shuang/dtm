@@ -37,19 +37,25 @@ func CronTransOnce() (gid string) {
 // CronExpiredTrans cron expired trans, num == -1 indicate for ever
 func CronExpiredTrans(num int) {
 	for i := 0; i < num || num == -1; i++ {
+		// 查找一个全局事务
 		gid := CronTransOnce()
 		if gid == "" && num != 1 {
+			// 如果没有事务就睡眠一段时间在继续
 			sleepCronTime()
 		}
 	}
 }
 
 func lockOneTrans(expireIn time.Duration) *TransGlobal {
+	// 创建全局事务对象
 	trans := TransGlobal{}
+	// 生成一个事务id
 	owner := GenGid()
+	// 获取数据库链接
 	db := dbGet()
 	getTime := dtmimp.GetDBSpecial().TimestampAdd
 	expire := int(expireIn / time.Second)
+	// 拼接where 条件
 	whereTime := fmt.Sprintf("next_cron_time < %s and update_time < %s", getTime(expire), getTime(expire-3))
 	// 这里next_cron_time需要限定范围，否则数据量累计之后，会导致查询变慢
 	// 限定update_time < now - 3，否则会出现刚被这个应用取出，又被另一个取出

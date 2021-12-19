@@ -40,17 +40,20 @@ type dtmConfigType struct {
 	UpdateBranchSync  int64             `yaml:"UpdateBranchSync"`
 }
 
-// DtmConfig 配置
+// DtmConfig 配置  创建dtmConfigType结构体的变量
 var DtmConfig = dtmConfigType{}
 
 func getIntEnv(key string, defaultV string) int64 {
 	return int64(dtmimp.MustAtoi(dtmimp.OrString(os.Getenv(key), defaultV)))
 }
 
+// MustLoadConfig 加载配置
 func MustLoadConfig() {
+	// 给DtmConfig变量 设置值
 	DtmConfig.TransCronInterval = getIntEnv("TRANS_CRON_INTERVAL", "3")
 	DtmConfig.TimeoutToFail = getIntEnv("TIMEOUT_TO_FAIL", "35")
 	DtmConfig.RetryInterval = getIntEnv("RETRY_INTERVAL", "10")
+	// 获取数据库配置
 	DtmConfig.DB = map[string]string{
 		"driver":             dtmimp.OrString(os.Getenv("DB_DRIVER"), "mysql"),
 		"host":               os.Getenv("DB_HOST"),
@@ -67,6 +70,7 @@ func MustLoadConfig() {
 	DtmConfig.DisableLocalhost = getIntEnv("DISABLE_LOCALHOST", "0")
 	DtmConfig.UpdateBranchSync = getIntEnv("UPDATE_BRANCH_SYNC", "0")
 	cont := []byte{}
+	// 从配置文件获取配置
 	for d := MustGetwd(); d != "" && d != "/"; d = filepath.Dir(d) {
 		cont1, err := ioutil.ReadFile(d + "/conf.yml")
 		if err != nil {
@@ -79,6 +83,7 @@ func MustLoadConfig() {
 	}
 	if len(cont) != 0 {
 		dtmimp.Logf("config is: \n%s", string(cont))
+		// 将从配置文件获取的配置 赋值给DtmConfig
 		err := yaml.Unmarshal(cont, &DtmConfig)
 		dtmimp.FatalIfError(err)
 	}
